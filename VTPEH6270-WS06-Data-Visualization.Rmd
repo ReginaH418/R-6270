@@ -1,0 +1,284 @@
+---
+title: "VTPEH 6270 - Data Simulation II"
+author: "Amandine Gamble"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: '1'
+  html_document:
+    toc: true
+    toc_depth: 1
+    number_sections: true
+editor_options:
+  chunk_output_type: console
+subtitle: ''
+urlcolor: blue
+---
+
+```{r markdown-options, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+```
+
+```{r setup, results = 'hide'}
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+```
+
+# Simulation 
+
+We simulate the relationship between cheese consumption (recorded as low or high) and happiness (recorded as score). We use the following parameters:
+
+* $n$ (nn): sample size
+* $p_c$ (prob_high_cheese): probability of high cheese consumption
+* $h_{c}$ (score_happy_given_high_cheese): mean happiness score given high cheese consumption
+* $h_{\overline{c}}$ (score_happy_given_low_cheese): mean happiness score given low cheese consumption
+* $h_{sd}$ (happy_sd): standard deviation of happiness score within each group
+
+## Function
+
+```{r}
+
+f_sim_cheese = function(nn, 
+                        prob_high_cheese,
+                        score_happy_given_high_cheese, 
+                        score_happy_given_low_cheese, 
+                        happy_sd
+                        ){
+  
+  # Cheese vector
+  v_cheese = sample(
+    c("High", "Low"),
+    nn,
+    replace = TRUE,
+    prob = c(prob_high_cheese, 1 - prob_high_cheese)
+  )
+  
+  # Happiness vector
+  v_happiness = NA
+  for (jj in 1:nn) {
+    if (v_cheese[jj] == "High") {
+      v_happiness[jj] = rnorm(1, score_happy_given_high_cheese, happy_sd)
+    } else if (v_cheese[jj] == "Low") {
+      v_happiness[jj] = rnorm(1, score_happy_given_low_cheese, happy_sd)
+    }
+  }
+
+  # Combine data
+  data = data.frame(
+    cheese = v_cheese, 
+    happiness = v_happiness)
+  
+  return(data)
+}
+
+```
+
+## Runs
+
+```{r}
+
+# Parameters for tests
+# prob_high_cheese = 0.4
+# score_happy_given_high_cheese = 0.8
+# score_happy_given_low_cheese = 0.3
+# happy_sd = 0.01
+
+# Initialize objects
+list_datasets <- list()
+df_stats <- data.frame(beta = NA, 
+                       sample = NA, 
+                       sim = NA, 
+                       high_cheese_mean = NA, 
+                       high_cheese_sd = NA, 
+                       low_cheese_mean = NA, 
+                       low_cheese_sd = NA,
+                       p = NA)
+sim_index = 1
+score_happy_given_high_cheese = 0.8
+
+# Loop on ???
+for (beta in seq(0, 0.2, 0.01)) {
+  
+  score_happy_given_low_cheese = score_happy_given_high_cheese - beta
+  
+  # Loop on ???
+  for (nn in seq(40, 100, 10)) {
+    
+    # Run simulation 100 times
+    for (ii in 1:100) {
+      
+      # Generate data
+      sim_data <- f_sim_cheese(
+        nn = nn,
+        prob_high_cheese = 0.4,
+        score_happy_given_high_cheese = score_happy_given_high_cheese,
+        score_happy_given_low_cheese = score_happy_given_low_cheese,
+        happy_sd = 0.2
+      )
+      
+      # Store full dataset (comment to go faster)
+      #list_datasets[[sim_index]] <- sim_data
+      
+      # Calculate mean and sd for each cheese group
+      df_stats[sim_index, ] = NA
+      df_stats[sim_index, "beta"] = beta
+      df_stats[sim_index, "sample"] = nn
+      df_stats[sim_index, "sim"] = ii
+      df_stats$high_cheese_mean[sim_index] =
+        round(mean(sim_data[sim_data$cheese == "High", "happiness"]), 2)
+      df_stats$high_cheese_sd[sim_index] =
+        round(sd(sim_data[sim_data$cheese == "High", "happiness"]), 2)
+      df_stats$low_cheese_mean[sim_index] =
+        round(mean(sim_data[sim_data$cheese == "Low", "happiness"]), 2)
+      df_stats$low_cheese_sd[sim_index] =
+        round(sd(sim_data[sim_data$cheese == "Low", "happiness"]), 2)
+      
+      # T-test
+      test = t.test(happiness ~ cheese, sim_data)
+      df_stats$p[sim_index] <- test$p.value
+      
+      # ???
+      sim_index = sim_index + 1
+      
+    }
+    
+  }
+  
+}
+
+# Clean environment 
+remove(ii, nn, beta, sim_index, test, sim_data)
+
+# Check: 1 simulation run
+#head(list_datasets[[1]])
+
+# Check: compiled summary statistics
+head(df_stats)
+
+# Save simulation summary
+write.csv(df_stats, "Export/sim_summary.csv", row.names = F, quote = F)
+
+# Pivot stats
+df_stats_long <- df_stats %>%
+  select(beta, sample, sim, high_cheese_mean, low_cheese_mean) %>%
+  pivot_longer(cols = c(high_cheese_mean, low_cheese_mean),
+               names_to = "group",
+               values_to = "mean_value") %>%
+  mutate(group = ifelse(group == "high_cheese_mean", "High Cheese", "Low Cheese"))
+
+```
+
+# Exploration
+
+## Summary statistics
+
+```{r}
+
+p1 = ggplot(df_stats_long, aes(x = mean_value, fill = group)) +
+  geom_histogram(alpha = 0.7,
+                 bins = 30,
+                 position = "identity") +
+  facet_grid(group ~ .) +
+  labs(x = "Mean Happiness Score", y = "Frequency", fill = "Cheese Group") +
+  theme_minimal() +
+  theme(legend.position = "none") 
+
+p1
+
+```
+
+## P-value
+
+```{r}
+
+p2 = ggplot(df_stats, aes(x = p)) +
+  geom_histogram(alpha = 0.7, bins = 30, position = "identity") +
+  labs(x = "p-value",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(legend.position = "none") 
+
+p2
+
+```
+
+```{r}
+
+p3 = ggplot(df_stats, aes(x = beta, y = p, color = sample)) +
+  geom_jitter() +
+  labs(x = "Effect size",
+       y = "p-value") +
+  scale_color_gradient(name = "Sample size") +
+  theme_minimal() 
+
+p3
+
+```
+
+## Power
+
+```{r}
+
+power_results <- df_stats %>%
+  group_by(beta, sample) %>%
+  summarise(
+    power = sum(p < 0.05, na.rm = TRUE)/sum(!is.na(p)),
+    .groups = "drop"
+  )
+
+```
+
+# Visualization
+
+First try...
+
+```{r}
+
+ggplot(power_results, aes(x = beta, y = sample, fill = power)) +
+  geom_tile() +
+  labs(x = "Effect size",
+       y = "Sample size") 
+
+```
+
+Final version...
+
+```{r}
+
+p4 = ggplot(power_results, aes(x = beta, y = sample, fill = power)) +
+  geom_tile() +
+  scale_fill_viridis_c(name = "Power", 
+                       labels = scales::percent_format()) +
+  geom_contour(aes(z = power), breaks = 0.8, color = "white", size = 1) +
+  labs(x = "Effect size",
+       y = "Sample size",
+       title = "Statistical Power Analysis",
+       subtitle = "White contour line indicates 80% power") +  # Fixed subtitle
+  theme_minimal()
+
+p4
+
+```
+
+Composed plot
+
+```{r}
+
+library(patchwork)
+
+combined_plot <- ((p1 / p2) | (p3 / p4)) + 
+  plot_annotation(
+    title = "Simulation Study Results: Cheese Consumption and Happiness",
+    theme = theme(plot.title = element_text(size = 16, hjust = 0.5))
+  ) 
+
+combined_plot
+
+```
+
