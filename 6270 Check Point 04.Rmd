@@ -1,0 +1,420 @@
+---
+title: "VTPEH 6270 - Check Point 04"
+author: "Regina Hong"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: '1'
+  html_document:
+    toc: true
+    toc_depth: 1
+    number_sections: true
+editor_options:
+  chunk_output_type: console
+urlcolor: blue
+---
+
+```{r markdown-options, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(knitr)
+
+```
+
+# 1. Objective and Approach
+
+## 1.1 Specific Objective
+
+Is depression score associated with daily carbohydrate intake?
+
+## 1.2 Data Description
+
+```{r, results='hide'}
+
+# Load data
+setwd("/Users/shiyi11/Desktop/R/6270/6270 Check Point 04")
+nhdc = read.csv("nhanes_L_diet_depression.csv")
+
+# create data description table
+data_description = data.frame(
+  Variable_Name = c("Depression_Score", "DR1TCARB", "RIAGENDR"),
+  Variable_Meaning = c(
+    "Depression symptom score",
+    "Daily carbohydrate intake(g)",
+    "Participant gender"
+  ),
+  Variable_Type = c(
+    "Continuous",
+    "Continuous",
+    "Categorical"
+  ),
+  Variable_Class_in_R = c(
+    class(nhdc$Depression_Score),
+    class(nhdc$DR1TCARB),
+    class(nhdc$RIAGENDR)
+  )
+)
+
+```
+
+```{r}
+
+# display table
+kable(
+  data_description,
+   col.names = c(
+    "Variable name",
+    "Meaning",
+    "Type in dataset",
+    "Class in R"
+  ),
+  caption = "Description of variables used in the research question"
+)
+
+```
+
+## 1.3 Data Visualization 
+
+```{r, results='hide'}
+
+ggplot(nhdc,
+       aes(x = DR1TCARB,
+           y = Depression_Score,
+           color = Gender)) +
+  geom_point(alpha = 0.6, size = 2) +
+  
+# Add a linear regression line to visualize the average association
+  geom_smooth(method = "lm",
+              linetype = "dashed",
+              color = "darkgreen",
+              se = TRUE) +
+  labs(
+    title = "Carbohydrate Intake and Depression Scores",
+    x = "Daily Carbohydrate Intake(g)",
+    y = "Depression Score(0-27)",
+    color = "Gender"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+
+```
+
+I choose the scatter plot to visualize the data. As is shown in the generated plot, each point represents an individual and colors indicate gender. The dashed line shows the fitted linear regression trend and the grey ribbon represents the 95% confidence interval.
+
+## 1.4 Description of Plausible Relationships 
+
+Based on the visual inspection of the scatter plot, daily carbohydrate intake and depression score appear to follow a weak positive linear association. The regression line suggests that higher carbohydrate intake may be associated with slightly higher depression scores. However, the large variability in the data indicates that this association is relatively weak. In addition, the distribution of points for males and females appears largely overlapping, indicating that the relationship between carbohydrate intake and depression score does not differ substantially by gender.
+
+## 1.5 Parameters of Interest
+
+```{r, results='hide'}
+
+parameters_table = data.frame(
+  Parameter = c(
+    "Intercept",
+    "Slope for carbohydrate intake",
+    "Noise term"
+  ),
+  Symbol = c(
+    "b",
+    "a",
+    "e"
+  ),
+  Description = c(
+    "Expected depression score when carbohydrate intake = 0",
+    "Change in depression score associated with a 1g increase in carbohydrate intake",
+    "Unexplained random variability"
+  )
+)
+
+```
+
+```{r}
+
+kable(
+  parameters_table,
+  col.names = c("Parameter", "Symbol", "Description"),
+  caption = "Parameters of interest for the proposed relationship"
+)
+
+```
+
+The mathematical relationship I use is: Y=b+aX+e, and in my situation, Y means the Depression Score, X is the Daily Carbohydrate Intake.
+
+# 2. Simulation
+
+## 2.1 Simulation Basis
+
+```{r, results='hide'}
+
+# Set the seed for reproducibility
+set.seed(123)
+
+# Number of observations
+nn = 1000
+
+# Simulate carbohydrate intake
+carb_intake = rnorm(nn, mean = 250, sd = 120)
+carb_intake = pmax(0, carb_intake)
+
+# Define model parameters
+intercept = 3
+slope_carb = 0.002
+
+# Random noise
+epsilon = rnorm(nn, mean = 0, sd = 4)
+
+# Simulate depression score
+depression_score = intercept +
+                    slope_carb * carb_intake +
+                    epsilon
+
+# Restrict simulated depression scores to the realistic PHQ-9 range from 0 to 27
+depression_score = round(pmax(0, pmin(27, depression_score)))
+
+# Create simulated dataset
+data = data.frame(
+  carbohydrate_intake = carb_intake,
+  depression_score = depression_score
+)
+
+# Display the first few rows of the simulated dataset
+head(data)
+
+```
+
+## 2.2 Simulation Output
+
+```{r}
+
+# Summary table
+summary_table = data.frame(
+  Variable = c("Carbohydrate intake", "Depression score"),
+  Mean = c(
+    mean(data$carbohydrate_intake),
+    mean(data$depression_score)
+  ),
+  SD = c(
+    sd(data$carbohydrate_intake),
+    sd(data$depression_score)
+  ),
+  Q1 = c(
+    quantile(data$carbohydrate_intake, 0.25),
+    quantile(data$depression_score, 0.25)
+  ),
+  Median = c(
+    median(data$carbohydrate_intake),
+    median(data$depression_score)
+  ),
+  Q3 = c(
+    quantile(data$carbohydrate_intake, 0.75),
+    quantile(data$depression_score, 0.75)
+  )
+)
+
+summary_table
+
+```
+
+## 2.3 Simulation Function
+
+```{r}
+
+f_sim_nhdc = function(effect_size, 
+                       noise_sd, 
+                       sample_size){
+
+  # Carbohydrate intake vector
+  v_carb = rnorm(sample_size, 
+                mean = 250, 
+                sd = 120)
+  v_carb = pmax(0, v_carb)
+  
+  # Model parameters
+  intercept = 3
+  
+  # Generate random noise
+  epsilon = rnorm(sample_size, 
+                   mean = 0, 
+                   sd = noise_sd)
+  
+  # Depression score vector
+  v_depression = intercept + effect_size * v_carb + epsilon
+  
+  # Restrict depression score between 0 and 27
+  v_depression = round(pmax(0, pmin(27, v_depression)))
+  
+  # Combine data
+  data_sim = data.frame(
+    carbohydrate_intake = v_carb,
+    depression_score = v_depression
+  )
+  
+  return(data_sim)
+}
+
+```
+
+## 2.4 Simulation Automation
+
+```{r}
+
+# Initialize lists to store results
+list_datasets = list()
+df_stats = data.frame(
+  run_id = NA,
+  sim = NA,
+  effect_size = NA,
+  sample_size = NA,
+  noise_sd = NA,
+  carb_mean = NA,
+  carb_sd = NA,
+  carb_q1 = NA,
+  carb_median = NA,
+  carb_q3 = NA,
+  dep_mean = NA,
+  dep_sd = NA,
+  dep_q1 = NA,
+  dep_median = NA,
+  dep_q3 = NA,
+  slope = NA
+)
+sim_index = 1
+
+# Run simulations across all scenarios
+for (aa in seq(0, 0.009, 0.001)) {
+# loop on effect size
+  for (nn in c(50, 100, 150, 200, 300, 400, 500, 700, 900, 1200)) {
+# loop on sample size
+    for (ee in c(2, 4, 6)) {
+# loop on noise levels
+    for (ii in 1:10) {
+# Run simulation 10 times
+      # Generate data
+      sim_data = f_sim_nhdc(
+        effect_size = aa,
+        noise_sd = ee,
+        sample_size = nn
+      )
+      
+      # Store full dataset
+      list_datasets[[sim_index]] = sim_data
+      
+      # Store summary statistics
+      df_stats[sim_index, ] <- NA
+      df_stats[sim_index, "run_id"] = sim_index
+      df_stats[sim_index, "effect_size"] = aa
+      df_stats[sim_index, "sim"] = ii
+      df_stats[sim_index, "sample_size"] = nn
+      df_stats[sim_index, "noise_sd"] = ee
+    
+# Store summary statistics for carbohydrate intake
+      df_stats$carb_mean[sim_index] = 
+        round(mean(sim_data$carbohydrate_intake), 2)
+      df_stats$carb_sd[sim_index] = 
+        round(sd(sim_data$carbohydrate_intake), 2)
+      df_stats$carb_q1[sim_index] = 
+        round(quantile(sim_data$carbohydrate_intake, 0.25), 2)
+      df_stats$carb_median[sim_index] = 
+        round(median(sim_data$carbohydrate_intake), 2)
+      df_stats$carb_q3[sim_index] = 
+        round(quantile(sim_data$carbohydrate_intake, 0.75), 2)
+      
+# Store summary statistics for depression score
+      df_stats$dep_mean[sim_index] = 
+        round(mean(sim_data$depression_score), 2)
+      df_stats$dep_sd[sim_index] = 
+        round(sd(sim_data$depression_score), 2)
+      df_stats$dep_q1[sim_index] = 
+        round(quantile(sim_data$depression_score, 0.25), 2)
+      df_stats$dep_median[sim_index] = 
+        round(median(sim_data$depression_score), 2)
+      df_stats$dep_q3[sim_index] = 
+        round(quantile(sim_data$depression_score, 0.75), 2)
+      
+# Fit linear model for each simulated dataset
+model = lm(depression_score ~ carbohydrate_intake, data = sim_data)
+
+# Store estimated slope
+df_stats[sim_index, "slope"] = coef(model)[2]
+      
+      sim_index = sim_index + 1
+      }
+    }
+  }
+}
+
+# Check summary statistics
+head(df_stats)
+
+
+```
+
+# 3. Visualization
+
+```{r}
+
+# Compute the average estimated slope across repeated simulations
+df_plot = df_stats %>%
+  group_by(effect_size, sample_size, noise_sd) %>%
+  summarise(
+    mean_slope = mean(slope),
+    .groups = "drop"
+  )
+
+# Convert sample size to a factor to control the order on the x-axis
+df_plot$sample_size = factor(
+  df_plot$sample_size,
+  levels = c(50, 100, 150, 200, 300, 400, 500, 700, 900, 1200)
+)
+
+# Create heatmap visualizing the estimated relationship between carbohydrate intake and depression score across simulation settings
+ggplot(df_plot,
+       aes(x = sample_size,
+           y = effect_size,
+           fill = mean_slope)) +
+  geom_tile(color = "white") +
+  facet_wrap(~noise_sd, nrow = 1) +
+  scale_fill_viridis_c() +
+  scale_y_continuous(
+    breaks = seq(0, 0.009, 0.002),
+    labels = scales::number_format(accuracy = 0.001)
+  ) +
+  labs(
+    title = "Estimated Relationship between\nCarbohydrate Intake and Depression Scores",
+    x = "Sample Size",
+    y = "True Effect Size",
+    fill = "Mean Estimated\nSlope"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold",
+      size = 14
+    ),
+# Rotate x-axis labels to avoid overlap
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1
+    ),
+    panel.grid = element_blank()
+  )
+
+```
+
+# 4. Interpretation
+
+The heatmap shows that the estimated relationship between carbohydrate intake and depression score varies across the simulated parameter settings. 
+
+Overall, the estimated slope increases as the true effect size increases. When the true effect size is close to zero, the estimated slopes remain close to zero across most sample sizes, indicating little or no detectable association between carbohydrate intake and depression scores. When the true effect size is very small, some simulations produce slightly negative slope estimates. Noise levels also influence the stability of the estimated relationship. At higher noise levels (noise = 6), the estimated slopes appear more variable and less consistent across sample sizes, suggesting that random variation can obscure the underlying association. In contrast, when noise is lower (noise = 2), the estimated slopes more closely follow the true effect sizes. As for the sample size, larger sample sizes tend to produce more stable estimates of the slope. As sample size increases, the estimated slopes become more consistent across simulations, indicating that larger datasets improve the reliability of detecting the relationship between carbohydrate intake and depression scores.
+
+# 5. AI Use Disclosure Statement
+
+ChatGPT was used to draft some of the rough code, explain R functions and assist with improving and debugging R code. All analysis, interpretations and final written answer were reviewed and completed by the author.

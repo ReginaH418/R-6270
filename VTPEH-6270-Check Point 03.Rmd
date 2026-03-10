@@ -1,0 +1,202 @@
+---
+title: "VTPEH 6270 - Check Point 03"
+author: "Regina Hong"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: '1'
+  html_document:
+    toc: true
+    toc_depth: 1
+    number_sections: true
+bibliography: references.bib
+csl: nature.csl
+editor_options:
+  chunk_output_type: console
+urlcolor: blue
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+```
+
+# 1. Research question and backgroud
+
+## 1.1 Research question
+
+Is total daily fat intake associated with depression status among U.S. adults?
+
+## 1.2 Scientific Plausibility and Context
+
+There is growing evidence shows that dietary fat intake may be related to depressive symptoms through inflammatory and neurobiological mechanisms. A prospective cohort study from the SUN Project found that higher trans fat intake was associated with increased risk of depression, suggesting that fat consumption may influence mood outcomes [@Sanchez2011].
+
+More recent research has also suggested that saturated fat intake may be linked to depression partly through diet-related inflammation, as measured by the Dietary Inflammatory Index [@Qi2024]. In addition, experimental studies in animal models have shown that high-fat diets can induce depression-like behaviors by altering brain signaling pathways involved in mood regulation [@Vagena2019].
+
+These studies suggest the rationale for examining whether total fat intake is associated with depression status in the NHANES sample I choose.
+
+# 2. Data Preparation
+
+```{r, results='hide'}
+
+library(tidyverse)
+
+# Load data
+setwd("/Users/shiyi11/Desktop/R/6270/6270 Check Point 03")
+nhdf = read.csv("nhanes_L_diet_depression.csv")
+
+# Create depression category (PHQ9 >=10 standard cutoff)
+nhdf$Depression_Status = factor(
+  ifelse(nhdf$Depression_Score >= 10, "Depressed", "Not_Depressed")
+)
+
+nhdf$Depression_Status = as.factor(nhdf$Depression_Status)
+
+# Remove the possible missing fat intake
+nhdf_clean = nhdf %>%
+  filter(!is.na(DR1TTFAT))
+
+# Calculate the fat energy proportion
+nhdf_clean = nhdf_clean %>%
+  mutate(
+    Fat_Kcal = DR1TTFAT * 9,
+    Fat_Proportion = Fat_Kcal / DR1TKCAL
+  )
+
+# Clean the inappropriate proportion number
+nhdf_clean = nhdf_clean %>%
+  filter(Fat_Proportion >= 0, Fat_Proportion <= 1)
+
+```
+
+# 3. Grouped Summary Statistics
+
+```{r, results='hide'}
+
+# Create a table to summarize the main descriptive statistics 
+summary_table = nhdf_clean %>%
+   group_by(Depression_Status) %>%
+  summarise(
+    N = n(),
+    Mean_FatProp = mean(Fat_Proportion, na.rm = TRUE),
+    SD_FatProp = sd(Fat_Proportion, na.rm = TRUE),
+    Median_FatProp = median(Fat_Proportion, na.rm = TRUE),
+    IQR_FatProp = IQR(Fat_Proportion, na.rm = TRUE)
+  )
+
+summary_table
+
+```
+
+```{r}
+
+knitr::kable(summary_table,
+             caption = "Summary statistics of fat energy proportion by depression status")
+
+```
+
+
+Interpretation: The descriptive statistics analysis shows that the proportion of energy derived from fat was very similar between individuals with and without depression. Although the non-depressed group had a slightly higher mean fat proportion, the difference was small and variability was comparable across groups. These results suggest that total fat proportion alone may not strongly distinguish depression status in this sample.
+
+# 4. Comparative Visualizations
+
+## 4.1 Boxplot
+
+```{r, results='hide'}
+
+# Draw boxplot to display median, IQR, and overall spread
+ggplot(nhdf_clean, aes(x = Depression_Status, y = Fat_Proportion)) +
+  geom_boxplot(
+    width = 0.5,
+    fill = "white",
+    color = "black",
+    outlier.size = 1.5
+  ) +
+# Add mean values to highlight group central tendency
+  stat_summary(
+    fun = mean,
+    geom = "point",
+    shape = 18,
+    size = 3,
+    color = "black"
+  ) +
+  # Limit the visible y-axis range without removing data
+  coord_cartesian(ylim = c(0, 0.6)) +
+  labs(
+    title = "Proportion of Energy from Fat by Depression Status",
+    x = "Depression Status",
+    y = "Proportion of Energy from Fat"
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 11),
+    axis.text = element_text(color = "black")
+    ) +
+  # Explicitly label depression groups based on PHQ-9 cutoff
+      scale_x_discrete(labels = c(
+  "Depression",
+  "No Depression"))
+
+# Save the visual as a PDF
+ggsave("Figure1_FatProportion_Depression.pdf",
+       width = 7,
+       height = 5,
+       device = "pdf")
+
+```
+
+Interpretation: The boxplot shows a high degree of overlap in the proportion of total energy intake from fat between individuals with and without depression. Median values are nearly identical across groups, and the mean values also differ only slightly. The spread of the data, as indicated by the interquartile range and whiskers, appears similar in both categories. Overall, the visual evidence suggests that total fat proportion alone does not meaningfully distinguish depression status in this NHANES sample. Any potential association appears small in magnitude based on descriptive visualization.
+
+## 4.2 Mean + 95%CI
+
+```{r}
+
+ggplot(nhdf_clean, aes(x = Depression_Status, y = Fat_Proportion)) +
+  
+  # Plot group means
+  stat_summary(
+    fun = mean,
+    geom = "point",
+    size = 3,
+    color = "black"
+  ) +
+  
+  # Add 95% confidence intervals around the mean
+  stat_summary(
+    fun.data = mean_cl_normal,
+    geom = "errorbar",
+    width = 0.2,
+    color = "black"
+  ) +
+  coord_cartesian(ylim = c(0, 0.6)) +
+  labs(
+    title = "Mean Proportion of Energy from Fat by Depression Status",
+    subtitle = "Error bars represent 95% confidence intervals",
+    x = "Depression Status",
+    y = "Proportion of Total Energy Intake"
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    plot.title = element_text(size = 13, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 11, hjust = 0.5),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(color = "black")
+  ) +
+  # Explicit group labels
+  scale_x_discrete(labels = c(
+    "Depression",
+    "No Depression"
+  ))
+
+```
+
+Interpretation: The mean fat energy proportion was slightly higher among individuals without depression compared to those with depression. However, the 95% confidence intervals largely overlap, indicating minimal difference between groups. These findings suggest that total fat proportion alone might be unlikely to meaningfully differentiate depression status in this sample.
+
+# 5. AI Use Disclosure Statement
+
+ChatGPT was used to draft some of the rough code, explain R functions and assist with improving and debugging R code. All analysis, interpretations, and final written answer were reviewed and completed by the author.
+
+# References

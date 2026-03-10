@@ -1,0 +1,273 @@
+---
+title: "VTPEH 6270 - Check Point 02"
+author: "Regina Hong"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: '1'
+  html_document:
+    toc: true
+    toc_depth: 1
+    number_sections: true
+editor_options:
+  chunk_output_type: console
+urlcolor: blue
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+```
+
+# 1. Introduction
+
+## 1.1 Background
+
+My backgroud is Nutrition and my concentration is FSH. Also, I have a huge interest in Psychology. So I'm always wondering if there is a way to study the relationship between nutrition and mental health. NHANES provides nationally representative data that make it possible for me to explore how dietary behaviors could relate to people's mental health in the United States.
+
+## 1.2 Project Question
+
+Is higher total daily energy intake associated with more frequent depressive symptoms?
+
+## 1.3 Data set overview
+
+The data used is from the [NHANES 2021 to 2023 data](https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?Cycle=2021-2023), conducted by the CDC of United States. The study population includes children and adults from non institutionalized U.S. population who participated in interviews and examinations conducted as part of NHANES.
+
+# 2. Data Set Exploration
+
+## 2.1 Loading Data
+
+```{r, results='hide'}
+
+library(tidyverse)
+
+# Set the working direction
+setwd("/Users/shiyi11/Desktop/R/6270/6270 Check Point 02")
+
+# Import the data set as a data frame
+data_nh = read.csv("nhanes_L_merged_diet.csv")
+
+glimpse(data_nh)
+
+```
+
+## 2.2 Variable Selection
+
+```{r, results='hide'}
+
+# Calculate total depression score
+# Make sure that each question is scored 0-3, total score ranges from 0-27
+dpq_items = c("DPQ010","DPQ020","DPQ030","DPQ040","DPQ050",
+               "DPQ060","DPQ070","DPQ080","DPQ090")
+
+data_nh = data_nh %>%
+  # Select 0-3 scores only
+  mutate(across(all_of(dpq_items), 
+                ~ ifelse(.x %in% 0:3, .x, NA))) %>%
+  # Calculate the final score
+  mutate(Depression_Score = rowSums(across(all_of(dpq_items)), na.rm = FALSE))
+
+
+# Select only the variables needed for this analysis
+data_nhdm = data_nh %>%
+  select(
+    # ID variable
+    SEQN, # Respondent ID
+    # Demographics
+    RIAGENDR, # Gender (1=Male, 2=Female)
+    RIDAGEYR, # Age in years
+    # Depression condition
+    Depression_Score,        
+    # Nutrition variables
+    DR1TKCAL, # Total calories (kcal)
+    DR1TPROT, # Total protein (g)
+    DR1TCARB, # Total carbohydrate (g)
+    DR1TTFAT  # Total fat (g)
+  )
+
+# Keep only complete cases
+data_nhdm = data_nhdm %>%
+  filter(
+    !is.na(DR1TKCAL),
+    !is.na(DR1TPROT),
+    !is.na(DR1TCARB),
+    !is.na(DR1TTFAT),
+    Depression_Score >= 0
+    ) 
+
+nrow(data_nhdm)
+ncol(data_nhdm)
+unique(data_nhdm$Depression_Score)
+
+# Export the new csv file with fewer variables
+write_csv(data_nhdm, "nhanes_L_diet_depression.csv")
+
+```
+
+## 2.3 Variable Overview
+
+```{r, results='hide'}
+
+# Convert the gender data to factor
+data_nhdm <- data_nhdm %>%
+  mutate(
+    RIAGENDR = factor(
+      RIAGENDR,
+      levels = c(1, 2),
+      labels = c("Male", "Female")
+    )
+  )
+
+# Create a table describing the variables
+vars = c("SEQN", "RIAGENDR", "RIDAGEYR", "Depression_Score",
+          "DR1TKCAL", "DR1TPROT", "DR1TCARB", "DR1TTFAT")
+variable_info = data.frame(
+  Variable = c("SEQN", "RIAGENDR", "RIDAGEYR", "Depression_Score",
+               "DR1TKCAL", "DR1TPROT", "DR1TCARB", "DR1TTFAT"),
+  Description = c(
+    "Respondent ID number",
+    "Gender",
+    "Age in years",
+    "Depression score",
+    "Total daily energy intake",
+    "Total daily protein intake",
+    "Total daily carbohydrate intake",
+    "Total daily fat intake"
+  ),
+  Type = c("Discrete", "Categorical", "Continuous", "Continuous",
+           "Continuous", "Continuous", "Continuous", "Continuous"),
+  Class = sapply(data_nhdm[, vars], function(x) class(x)[1]),
+  Unit = c("ID", "1=Male, 2=Female", "years", "0-27 points",
+           "kcal", "g", "g", "g"),
+  row.names = NULL
+)
+
+
+```
+
+```{r}
+
+# Display as a formatted table
+library(kableExtra)
+kable(variable_info, 
+      caption = "Overview of Selected Variables",
+      booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", 
+                                  "hold_position",
+                                  "left"))
+
+```
+
+
+## 2.4 Data Visualization 
+
+### 2.4.1 Histogram
+
+I choose to use the depression score to produce a histogram to show the distribution.
+
+```{r, results='hide'}
+
+# Calculate the mean and median
+mean_score = mean(data_nhdm$Depression_Score, na.rm = TRUE)
+median_score = median(data_nhdm$Depression_Score, na.rm = TRUE)
+
+# Create histogram
+ggplot(data_nhdm, aes(x = Depression_Score)) +
+  # Add histogram
+  geom_histogram(
+    binwidth = 1,
+    boundary = -0.5,
+    fill = "steelblue",              
+    color = "white",               
+    alpha = 0.8                    
+  ) +
+  # Add mean line
+  geom_vline(
+    aes(xintercept = mean_score),
+    color = "red",           
+    linetype = "dashed",
+    linewidth = 1
+  ) +
+  # Add median line
+  geom_vline(
+    aes(xintercept = median_score),
+    color = "darkblue",            
+    linetype = "solid",
+    linewidth = 1
+  ) +
+  # Add annotations
+  annotate("text", x = mean_score, y = Inf, 
+           label = paste("Mean =", round(mean_score, 2)),
+           vjust = 5, 
+           hjust = -0.1,
+           color = "red", fontface = "bold") +
+  annotate("text", x = median_score, y = Inf,
+           label = paste("Median =", round(median_score, 2)),
+           vjust = 1,
+           hjust = -0.1,
+           color = "darkblue", fontface = "bold") +
+  labs(
+    title = "Distribution of Depression Scores",
+    x = "Depression Score (0-27)",
+    y = "Frequency"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    axis.title = element_text(face = "bold", size = 14),
+    panel.grid.minor = element_blank()
+  ) +
+  scale_x_continuous(breaks = seq(0, 27, 3))
+
+```
+
+### 2.4.2 Scatterplot
+
+I choose to use scatterplot to show the relationship between the protein intake and depression score.
+
+```{r, results='hide'}
+
+# Create scatterplot
+ggplot(data_nhdm, 
+       aes(x = DR1TPROT, 
+           y = Depression_Score, 
+           color = RIAGENDR)) +
+  # Add points
+  geom_point(
+    alpha = 0.8,                   
+    size = 2.5,                    
+    shape = 16                     
+  ) +
+  # Add trend line
+  geom_smooth(
+    method = "lm",                 
+    se = TRUE,                     # Show confidence interval
+    color = "darkgreen",             
+    fill = "grey",              
+    linetype = "dashed",
+    linewidth = 1.2,
+    alpha = 0.2
+  ) +
+  labs(
+    title = "Protein Intake and Depression Scores",
+    x = "Daily Protein Intake (g)",
+    y = "Depression Score (0-27)",
+    color = "Gender"
+  ) +
+  # Change theme
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.position = "top",
+    legend.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  ) 
+
+```
+
+# 3. AI Use Disclosure Statement
+
+This document was generated using ChatGPT to draft some of the rough code, explain R functions, and assist with improving and debugging R code. All analysis, interpretations, and final written answer were reviewed and completed by the author.
