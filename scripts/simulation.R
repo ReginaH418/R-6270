@@ -2,7 +2,23 @@
 # Goal: Examine statistical power across different
 # sample sizes, effect sizes, and noise levels.
 
+# Create output folder if not exists
+if(!dir.exists("output")){
+  dir.create("output")
+}
+
+# Install packages if not exists
+packages <- c("tidyverse", "ggplot2")
+
+for(p in packages){
+  if(!require(p, character.only = TRUE)){
+    install.packages(p)
+    library(p, character.only = TRUE)
+  }
+}
+
 library(tidyverse)
+library(ggplot2)
 set.seed(123)
 
 # Parameter settings

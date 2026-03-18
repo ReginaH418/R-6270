@@ -2,6 +2,21 @@
 # Author: Regina Hong
 # Description: Exploratory analysis of NHANES diet and depression data
 
+# Create output folder if not exists
+if(!dir.exists("output")){
+  dir.create("output")
+}
+
+# Install packages if not exists
+packages <- c("tidyverse", "ggplot2")
+
+for(p in packages){
+  if(!require(p, character.only = TRUE)){
+    install.packages(p)
+    library(p, character.only = TRUE)
+  }
+}
+
 # Load packages
 library(tidyverse)
 library(ggplot2)
