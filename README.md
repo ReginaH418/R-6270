@@ -46,8 +46,6 @@ exploration.R
 Performs exploratory data analysis including summary statistics and visualizations.  
 simulation.R  
 Runs simulation experiments examining how sample size, effect size, and noise influence statistical power.
-nhanes_merge_diet_mentalhealth.R  
-Shows the processes of NHANES datasets and creates the merged dataset used for analysis. The processed dataset was directly used in the exploration and simulation scripts.
 
 output/  
 Figure/  
