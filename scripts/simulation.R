@@ -12,7 +12,7 @@ if(!dir.exists("output/Figure")){
 }
 
 # Install packages if not exists
-packages <- c("tidyverse", "ggplot2")
+packages = c("tidyverse", "ggplot2")
 
 for(p in packages){
   if(!require(p, character.only = TRUE)){

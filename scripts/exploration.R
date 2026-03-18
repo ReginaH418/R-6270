@@ -12,7 +12,7 @@ if(!dir.exists("output/Figure")){
 }
 
 # Install packages if not exists
-packages <- c("tidyverse", "ggplot2")
+packages = c("tidyverse", "ggplot2")
 
 for(p in packages){
   if(!require(p, character.only = TRUE)){
@@ -26,7 +26,7 @@ library(tidyverse)
 library(ggplot2)
 
 # 1 Load data
-data_nhdm = read.csv("data/nhanes_L_diet_depression_with_gender.csv")
+data_nhdm = read.csv("data/Processed data/nhanes_L_diet_depression_with_gender.csv")
 
 glimpse(data_nhdm)
 summary(data_nhdm)
