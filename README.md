@@ -1,3 +1,4 @@
+# VTPEH 6270 – Diet and Depression Analysis
 This repository contains code and materials for VTPEH 6270 coursework.
 The project examines the relationship between dietary intake and depression scores using NHANES data and includes both data analysis and simulation studies.
 
@@ -31,7 +32,10 @@ simulation.R
 Runs simulation experiments examining how sample size, effect size, and noise influence statistical power.
 
 nhanes_merge_diet_mentalhealth.R  
-Processes NHANES datasets and creates the merged dataset used for analysis.
+Shows the processes of NHANES datasets and creates the merged dataset used for analysis. The processed dataset was directly used in the exploration and simulation scripts.
+
+output/
+All figures are saved in the output/ folder
 
 ## AI Tool Disclosure
-ChatGPT was used to assist with instruction clarification and repository organization.
+ChatGPT was used to assist with instruction clarification, repository organization and debugging R code for reproducibility.
