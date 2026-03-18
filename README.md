@@ -25,7 +25,7 @@ https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?Cycle=2021-2023
 ### Processed Data
 The main analysis uses a cleaned dataset:
 
-`data/nhanes_L_diet_depression_with_gender.csv`
+`data/Processed data/nhanes_L_diet_depression_with_gender.csv`
 
 This dataset includes:
 1. Depression score (PHQ-9 total, range 0–27)
