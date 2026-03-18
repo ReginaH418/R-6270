@@ -7,6 +7,10 @@ if(!dir.exists("output")){
   dir.create("output")
 }
 
+if(!dir.exists("output/Figure")){
+  dir.create("output/Figure")
+}
+
 # Install packages if not exists
 packages <- c("tidyverse", "ggplot2")
 
@@ -75,7 +79,7 @@ ggplot(data_nhdm, aes(x = Depression_Score)) +
   scale_x_continuous(breaks = seq(0, 27, 3))
 
 ggsave(
-  "output/histogram_depression.png",
+  "output/Figure/histogram_depression.png",
   width = 7,
   height = 5,
   dpi = 300
@@ -111,7 +115,7 @@ ggplot(data_nhdm,
   )
 
 ggsave(
-  "output/violin_gender_depression.png",
+  "output/Figure/violin_gender_depression.png",
   width = 7,
   height = 5,
   dpi = 300
@@ -154,7 +158,7 @@ ggplot(data_nhdm,
   ) 
 
 ggsave(
-  "output/scatter_protein_depression.png",
+  "output/Figure/scatter_protein_depression.png",
   width = 7,
   height = 5,
   dpi = 300
@@ -195,7 +199,7 @@ ggplot(data_nhdm,
   ) 
 
 ggsave(
-  "output/scatter_carb_depression.png",
+  "output/Figure/scatter_carb_depression.png",
   width = 7,
   height = 5,
   dpi = 300
@@ -236,7 +240,7 @@ ggplot(data_nhdm,
   ) 
 
 ggsave(
-  "output/scatter_fat_depression.png",
+  "output/Figure/scatter_fat_depression.png",
   width = 7,
   height = 5,
   dpi = 300
@@ -277,7 +281,7 @@ ggplot(data_nhdm,
   ) 
 
 ggsave(
-  "output/scatter_energy_depression.png",
+  "output/Figure/scatter_energy_depression.png",
   width = 7,
   height = 5,
   dpi = 300

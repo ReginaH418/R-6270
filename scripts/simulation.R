@@ -7,6 +7,10 @@ if(!dir.exists("output")){
   dir.create("output")
 }
 
+if(!dir.exists("output/Figure")){
+  dir.create("output/Figure")
+}
+
 # Install packages if not exists
 packages <- c("tidyverse", "ggplot2")
 
@@ -109,7 +113,7 @@ ggplot(df_power,
   )
 
 ggsave(
-  "output/power_heatmap.png",
+  "output/Figure/power_heatmap.png",
   width = 10,
   height = 5,
   dpi = 300
