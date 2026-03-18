@@ -36,10 +36,10 @@ This dataset has been preprocessed and is used directly for exploration and simu
 
 ## Repository Structure
 data/  
-Raw data/
-Contains raw NHANES datasets (.xpt) 
-Processed data/
-Contains the processed datasets (.csv).
+Raw data/  
+Contains raw NHANES datasets (.xpt)   
+Processed data/  
+Contains the processed datasets (.csv)  
 
 scripts/  
 exploration.R  
@@ -49,10 +49,10 @@ Runs simulation experiments examining how sample size, effect size, and noise in
 nhanes_merge_diet_mentalhealth.R  
 Shows the processes of NHANES datasets and creates the merged dataset used for analysis. The processed dataset was directly used in the exploration and simulation scripts.
 
-output/
-Figure/
-All figures are saved in the output/Figure folder.
-Reports/
+output/  
+Figure/  
+All figures are saved in the output/Figure folder.  
+Reports/  
 Contains the reports of the past Check Points as reference.
 
 ## AI Tool Disclosure
