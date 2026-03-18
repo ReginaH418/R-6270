@@ -43,7 +43,7 @@ Contains the processed datasets (.csv)
 
 scripts/  
 exploration.R  
-Performs exploratory data analysis including summary statistics and visualizations.
+Performs exploratory data analysis including summary statistics and visualizations.  
 simulation.R  
 Runs simulation experiments examining how sample size, effect size, and noise influence statistical power.
 nhanes_merge_diet_mentalhealth.R  
