@@ -1,4 +1,5 @@
-# VTPEH 6270 – Check Point 05 Repository
+This repository contains code and materials for VTPEH 6270 coursework.
+The project examines the relationship between dietary intake and depression scores using NHANES data and includes both data analysis and simulation studies.
 
 ## Author
 Regina Hong
@@ -27,10 +28,10 @@ exploration.R
 Performs exploratory data analysis including summary statistics and visualizations.
 
 simulation.R  
-Runs simulation experiments examining how sample size, effect size, and noise influence regression estimates.
+Runs simulation experiments examining how sample size, effect size, and noise influence statistical power.
 
 nhanes_merge_diet_mentalhealth.R  
 Processes NHANES datasets and creates the merged dataset used for analysis.
 
 ## AI Tool Disclosure
-ChatGPT was used to assist with repository organization and documentation.
+ChatGPT was used to assist with instruction clarification and repository organization.
