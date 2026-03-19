@@ -27,12 +27,22 @@ The main analysis uses a cleaned dataset:
 
 `data/Processed data/nhanes_L_diet_depression_with_gender.csv`
 
-This dataset includes:
-1. Depression score (PHQ-9 total, range 0–27)
-2. Dietary intake variables (calories, protein, carbohydrate, fat)
-3. Demographic variables (including gender)
-
 This dataset has been preprocessed and is used directly for exploration and simulation.
+
+### Data Description
+The cleaned dataset focuses on dietary intake and depressive symptoms. The variables included in this analysis are described below:
+
+- **SEQN**: Unique participant identifier assigned by NHANES, used to link records across datasets.  
+- **RIAGENDR**: Categorical variable indicating biological sex of the participant (1 = Male, 2 = Female), as defined in NHANES.  
+- **RIDAGEYR**: Continuous variable representing age in years at the time of the survey interview.  
+- **Depression_Score**: Continuous variable measuring depressive symptom severity based on questionnaire responses (e.g., PHQ scale), with higher scores indicating more severe symptoms.  
+- **DR1TKCAL**: Continuous variable representing total daily energy intake (kilocalories) based on 24-hour dietary recall.  
+- **DR1TPROT**: Continuous variable indicating total daily protein intake (grams) derived from dietary recall data.  
+- **DR1TCARB**: Continuous variable measuring total daily carbohydrate intake (grams) based on 24-hour dietary recall.  
+- **DR1TTFAT**: Continuous variable representing total daily fat intake (grams) derived from dietary recall.  
+- **Gender**: Categorical variable representing recorded gender for analysis (e.g., Male and Female), derived from RIAGENDR for improved interpretability.  
+
+All dietary variables (DR1TKCAL, DR1TPROT, DR1TCARB, DR1TTFAT) are based on NHANES Day 1 24-hour dietary recall data.
 
 ## Repository Structure
 data/  
