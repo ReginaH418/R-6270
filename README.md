@@ -56,12 +56,15 @@ exploration.R
 Performs exploratory data analysis including summary statistics and visualizations.  
 simulation.R  
 Runs simulation experiments examining how sample size, effect size, and noise influence statistical power.
+CP06_Statistic_Analysis_Fat_Depression.R
+Runs statistic analysis between fat proportion and depression score to explore the probable relationship.
 
-output/  
+output/
+The outputs of subsequent check points after CP05 are included as a new folder.
 Figure/  
 All figures are saved in the output/Figure folder.  
 Reports/  
-Contains the reports of the past Check Points as reference.
+Contains the reports of the past Check Points as reference and subsequent check points content.
 
 ## AI Tool Disclosure
 ChatGPT was used to assist with instruction clarification, repository organization and debugging R code for reproducibility.
