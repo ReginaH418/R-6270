@@ -56,10 +56,10 @@ exploration.R
 Performs exploratory data analysis including summary statistics and visualizations.  
 simulation.R  
 Runs simulation experiments examining how sample size, effect size, and noise influence statistical power.
-CP06_Statistic_Analysis_Fat_Depression.R
+CP06_Statistic_Analysis_Fat_Depression.R  
 Runs statistic analysis between fat proportion and depression score to explore the probable relationship.
 
-output/
+output/  
 The outputs of subsequent check points after CP05 are included as a new folder.
 Figure/  
 All figures are saved in the output/Figure folder.  
