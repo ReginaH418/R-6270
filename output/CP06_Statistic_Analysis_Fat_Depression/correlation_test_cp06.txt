@@ -1,0 +1,12 @@
+
+	Pearson's product-moment correlation
+
+data:  nhdf_clean$Fat_Proportion and nhdf_clean$Depression_Score
+t = -1.2193, df = 4521, p-value = 0.2228
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ -0.04725114  0.01101861
+sample estimates:
+        cor 
+-0.01813166 
+

@@ -1,0 +1,100 @@
+---
+title: "VTPEH 6270 - Check Point 06 - Statistic Analytics"
+author: "Regina Hong"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: '1'
+  html_document:
+    toc: true
+    toc_depth: 1
+    number_sections: true
+bibliography: CP06references.bib
+csl: nature.csl
+editor_options:
+  chunk_output_type: console
+urlcolor: blue
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+```
+
+# 1. Introduction
+
+## 1.1 Research question
+
+Is total daily fat intake associated with depression status among U.S. adults?
+
+## 1.2 Scientific Plausibility and Context
+
+There is growing evidence shows that dietary fat intake may be related to depressive symptoms through inflammatory and neurobiological mechanisms. A prospective cohort study from the SUN Project found that higher trans fat intake was associated with increased risk of depression, suggesting that fat consumption may influence mood outcomes [@Sanchez2011].
+
+More recent research has also suggested that saturated fat intake may be linked to depression partly through diet-related inflammation, as measured by the Dietary Inflammatory Index [@Qi2024]. In addition, experimental studies in animal models have shown that high-fat diets can induce depression-like behaviors by altering brain signaling pathways involved in mood regulation [@Vagena2019].
+
+These studies suggest the rationale for examining whether total fat intake is associated with depression status in the NHANES sample I choose.
+
+# 2. Material & Methods
+
+## 2.1 Data
+
+The data used were obtained from the [National Health and Nutrition Examination Survey (NHANES) 2021-2023 cycle](https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?Cycle=2021-2023), a nationally representative cross-sectional survey conducted by the Centers for Disease Control and Prevention (CDC) to assess the health and nutritional status of the non-institutionalized U.S. population.
+
+Depression symptoms were measured using the Patient Health Questionnaire-9 (PHQ-9), a validated screening tool with scores ranging from 0 to 27, where higher scores indicate more severe depressive symptoms.
+
+Total daily fat intake (DR1TTFAT) was obtained from the first-day 24-hour dietary recall interview. Total energy intake (DR1TKCAL) was used to calculate the proportion of total daily energy intake derived from fat. The fat energy proportion was computed by multiplying fat intake (g) by 9 kcal per gram and dividing by total daily energy intake.
+
+Participants with missing values in fat intake, energy intake, or depression score were excluded from the analysis. Observations with implausible fat energy proportion values outside the range of 0 to 1 were also removed.
+
+## 2.2 Statistical Analyses
+
+A linear regression model was used to examine the association between fat energy proportion and depression score. Depression score was treated as a continuous outcome variable and fat energy proportion was included as the predictor variable.
+
+Descriptive statistics were first calculated to summarize fat energy proportion across the sample. Scatterplots with fitted regression lines were used to visually assess the relationship between fat energy proportion and depression score.
+
+Model assumptions, including linearity, normality of residuals, and homoscedasticity, were evaluated using diagnostic plots and relative tests.
+
+Regression coefficients with corresponding p-values were reported to describe the strength and direction of the association. All statistical analyses were conducted using R.
+
+## 2.3 Code
+
+The code used to generate this analysis is available in the following GitHub repository: https://github.com/ReginaH418/R-6270
+
+# 3. Results
+
+## 3.1 Descriptive statistics
+
+The final analytic sample included participants with non-missing values for fat intake, total energy intake, and depression score. The mean depression score was 4.00 (SD = 4.67), with a median of 2.00 and an interquartile range of 5.00. The mean fat energy proportion was 0.376 (SD = 0.097), with a median of 0.379 and an interquartile range of 0.125.
+
+## 3.2 Visualization
+
+Figure 1 shows the relationship between fat energy proportion and depression score. The scatterplot suggests that there was substantial variability in depression scores across the full range of fat energy proportion values. The fitted regression line showed a very slight negative slope, but the pattern appeared weak overall.
+
+Figure 2 shows the distribution of depression scores in the sample. Depression scores were right-skewed, with most participants having relatively low scores. The mean depression score was 4, while the median was 2, indicating that the distribution was not symmetric and that a smaller number of participants had higher depression scores.
+
+## 3.3 Linear regression results
+
+A linear regression model was used to examine the association between fat energy proportion and depression score. The estimated regression coefficient for fat energy proportion was -0.87, indicating that higher fat energy proportion was associated with a slightly lower depression score on average. However, this association was not statistically significant (p = 0.223), and the 95% confidence interval included 0 (-2.28 to 0.53). Overall, the regression results suggest that fat energy proportion was not meaningfully associated with depression score in this sample.
+
+As a supplemental analysis, the Pearson correlation between fat energy proportion and depression score was also very weak and not statistically significant (r = -0.018, p = 0.223), which supports the same conclusion.
+
+## 3.4 Model diagnostics
+
+Diagnostic plots were used to assess the assumptions of the linear regression model. The residual plots suggested that the linear trend between fat energy proportion and depression score was weak. The Q-Q plot showed clear deviation from normality, especially in the upper tail, and the Shapiro-Wilk test was statistically significant (W = 0.808, p < 0.05), indicating that the residuals were not normally distributed.
+
+The Scale-Location plot also suggested some non-constant variance, meaning that homoscedasticity may not have been fully satisfied. Taken together, these diagnostics suggest that the linear regression results should be interpreted with caution, although the overall pattern still indicates little evidence of a meaningful association.
+
+# 4. Conclusions
+
+This study examined whether total daily fat intake, expressed as fat energy proportion, was associated with depression score among U.S. adults in the NHANES 2021-2023 cycle sample. Although the fitted regression line suggested a slight negative relationship, the association was very weak and not statistically significant. The correlation analysis showed the same pattern, suggesting that fat energy proportion alone did not meaningfully explain variation in depression score in this sample.
+
+These findings suggest that total dietary fat proportion by itself may not be a strong predictor of depressive symptoms. This does not necessarily mean that diet is unrelated to depression, but rather that this single dietary measure may be too broad to capture more complex nutrition and mental health relationships. Other factors such as diet quality, specific types of fat, socioeconomic conditions, and other health related variables may be more important to consider in future analyses.
+
+# 5. AI Use Disclosure Statement
+
+ChatGPT was used to assist with debugging R code, refining the statistical analysis workflow, and improving the wording of the report. All analyses, interpretations, and final written content were reviewed and completed by the author.
+
+# References
