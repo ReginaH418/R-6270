@@ -62,7 +62,7 @@ Runs statistic analysis between fat proportion and depression score to explore t
 output/  
 The outputs of subsequent check points after CP05 are included as a new folder.
 Figure/  
-All figures are saved in the output/Figure folder.  
+Exploration and simulation figures are saved in the output/Figure folder.  
 Reports/  
 Contains the reports of the past Check Points as reference and subsequent check points content.
 
