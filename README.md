@@ -60,7 +60,7 @@ CP06_Statistic_Analysis_Fat_Depression.R
 Runs statistic analysis between fat proportion and depression score to explore the possible relationship.
 
 output/  
-The outputs of subsequent check points after CP05 are included as a new folder.
+The outputs of subsequent check points after CP05 are included as a new folder.  
 Figure/  
 Exploration and simulation figures are saved in the output/Figure folder.  
 Reports/  
