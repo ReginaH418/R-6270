@@ -31,7 +31,7 @@ This repository contains data processing scripts and datasets for the VTPEH 6270
 
 An interactive Shiny app has been developed to visualize and explore the analysis results.
 
-🔗 **Live App:** [https://reginah418.shinyapps.io/Diet_Depression/](https://reginah418.shinyapps.io/Diet_Depression/)
+🔗 **Live App:** [https://akaregina.shinyapps.io/Diet_Depression/](https://akaregina.shinyapps.io/Diet_Depression/)
 
 ### App Features
 
