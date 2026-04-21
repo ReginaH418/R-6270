@@ -105,21 +105,24 @@ All dietary variables are based on NHANES Day 1 24-hour dietary recall data.
 ```
 R-6270/
 ├── data/
-│   ├── Raw data/               # Raw NHANES datasets (.xpt)
-│   └── Processed data/         # Processed datasets (.csv)
+│   ├── Raw data/                    # Raw NHANES datasets (.xpt)
+│   └── Processed data/              # Processed datasets (.csv)
 │
 ├── scripts/
-│   ├── exploration.R           # Exploratory data analysis
-│   ├── simulation.R            # Power simulation study
+│   ├── exploration.R                # Exploratory data analysis
+│   ├── simulation.R                 # Power simulation study
 │   └── CP06_Statistic_Analysis_Fat_Depression.R
 │
-├── shiny/                      # CP07 Shiny App
-│   ├── app.R                   # Main Shiny application
+├── shiny/                           # CP07 Shiny App
+│   ├── app.R                        # Main Shiny application
 │   └── nhanes_L_diet_depression_with_gender.csv
 │
 └── output/
-    ├── Figure/                 # Exploration and simulation figures
-    └── Reports/                # Checkpoint reports
+    ├── Figure/                      # Exploration and simulation figures
+    ├── Report/                      # Checkpoint reports
+    └── CP06_Statistic_Analysis_Fat_Depression/
+        ├── Figure/                  # CP06 regression and diagnostic plots
+        └── ...                      # Model outputs and statistical results
 ```
 
 ---
