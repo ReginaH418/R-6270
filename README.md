@@ -135,7 +135,7 @@ R-6270/
 │   ├── simulation.R                 # Power simulation study
 │   └── CP06_Statistic_Analysis_Fat_Depression.R
 │
-├── shiny/                           # CP07 Shiny App
+├── Shiny app/                       # CP07 Shiny App
 │   ├── app.R                        # Main Shiny application
 │   └── nhanes_L_diet_depression_with_gender.csv
 │
