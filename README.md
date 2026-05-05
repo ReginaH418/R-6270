@@ -69,7 +69,7 @@ The app includes five interactive tabs:
 
 1. Clone this repository
 2. Make sure the following R packages are installed:
-   `shiny`, `shinydashboard`, `ggplot2`, `dplyr`, `DT`, `scales`, `bslib`, `shinyWidgets`
+   `shiny`, `shinydashboard`, `ggplot2`, `dplyr`, `DT`, `scales`, `bslib`, `shinyWidgets`, `plotly`
 3. Open RStudio and run:
 
 ```r
