@@ -27,6 +27,28 @@ This repository contains data processing scripts and datasets for the VTPEH 6270
 
 ---
 
+## Final Report
+
+The final report examines associations between macronutrient intakes (fat, carbohydrate, protein) and total energy intake with PHQ-9 depressive symptom scores using NHANES 2021–2023 data.
+
+📄 **Report script file:** [`Final Report/Final_Report_Depression_Macronutrients.Rmd`](Final%20Report/Final_Report_Depression_Macronutrients.Rmd)
+
+### To reproduce the report
+
+1. Clone this repository
+2. Open `R-6270.Rproj` in RStudio
+3. Install required packages (automatically handled on first run):
+   `tidyverse`, `ggplot2`, `knitr`, `kableExtra`, `corrplot`, `broom`, `car`, `lmtest`, `patchwork`, `rprojroot`
+4. Place the following files in the `Final Report/` folder:
+   - `nhanes_L_diet_depression_with_gender.csv`
+   - `references.bib`
+   - `american-medical-association.csl`
+5. Open `Final_Report_Depression_Macronutrients.Rmd` and click **Knit**
+
+> The working directory is set automatically using `rprojroot` — no manual path changes needed.
+
+---
+
 ## Shiny App (CP07)
 
 An interactive Shiny app has been developed to visualize and explore the analysis results.
@@ -116,6 +138,12 @@ R-6270/
 ├── shiny/                           # CP07 Shiny App
 │   ├── app.R                        # Main Shiny application
 │   └── nhanes_L_diet_depression_with_gender.csv
+│
+├── Final Report/                    # Final Report (R Markdown + PDF)
+│   ├── Final_Report_Depression_Macronutrients.Rmd
+│   ├── Final_Report_Depression_Macronutrients.pdf
+│   ├── references.bib
+│   └── american-medical-association.csl
 │
 └── output/
     ├── Figure/                      # Exploration and simulation figures

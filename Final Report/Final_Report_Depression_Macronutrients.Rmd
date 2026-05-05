@@ -1,0 +1,477 @@
+---
+title: |
+  **Macronutrient Intake, Energy Intake, and Depressive Symptoms Among U.S. Adults:**
+  A Cross-Sectional Analysis of NHANES 2021--2023
+author: "Regina Hong"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    latex_engine: xelatex
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+bibliography: references.bib
+csl: american-medical-association.csl
+urlcolor: black
+linkcolor: black
+citecolor: black
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{float}
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = FALSE,
+  warning   = FALSE,
+  message   = FALSE,
+  fig.align = "center",
+  fig.pos   = "H",
+  out.width = "90%"
+)
+# Portable working directory: works on any machine after cloning the repo
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+```{r packages, include=FALSE}
+pkgs = c("tidyverse", "ggplot2", "knitr", "kableExtra",
+         "corrplot", "broom", "car", "lmtest", "patchwork", "rprojroot")
+for (p in pkgs) {
+  if (!require(p, character.only = TRUE, quietly = TRUE)) {
+    install.packages(p)
+    library(p, character.only = TRUE)
+  }
+}
+```
+
+```{r data-prep, include=FALSE}
+data_raw = read.csv("data/Processed data/nhanes_L_diet_depression_with_gender.csv", stringsAsFactors = FALSE)
+data_raw = data_raw %>%
+  mutate(
+    Gender = factor(RIAGENDR, levels = c(1, 2), labels = c("Male", "Female")),
+    Fat_Kcal       = DR1TTFAT * 9,
+    Fat_Proportion = Fat_Kcal / DR1TKCAL,
+    Depression_Status = factor(
+      ifelse(Depression_Score >= 10, "Depressed", "Not Depressed"),
+      levels = c("Not Depressed", "Depressed")
+    )
+  )
+df = data_raw %>%
+  filter(
+    !is.na(DR1TKCAL), !is.na(DR1TPROT), !is.na(DR1TCARB), !is.na(DR1TTFAT),
+    !is.na(Depression_Score), !is.na(RIDAGEYR),
+    Fat_Proportion >= 0, Fat_Proportion <= 1, DR1TKCAL > 0
+  )
+n_total = nrow(df)
+```
+
+---
+
+**GitHub Repository:** <https://github.com/ReginaH418/R-6270>
+
+**Interactive Shiny App:** <https://akaregina.shinyapps.io/Diet_Depression/>
+
+**Data Source:** NHANES 2021-2023 (<https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?Cycle=2021-2023>)
+
+**AI Disclosure:** ChatGPT and Claude were used to assist with drafting and debugging R code, explaining functions, and repository organization. All analysis, interpretations, and final written content were reviewed and completed by the author.
+
+---
+
+\newpage
+
+# Introduction
+
+## Background
+
+Depression is one of the leading causes of disability worldwide, affecting hundreds of millions of people across all demographics. In the United States alone, the prevalence of depression among adolescents and adults increased from 8.2% to 13.1% between 2013-2014 and 2021-2023, a striking rise of over 60% in less than a decade [@NCHS2025]. As depression continues to impose substantial burdens on individuals, families, and health systems, identifying modifiable risk factors such as diet has become an increasingly important priority in public health research.
+
+The relationship between nutrition and mental health has attracted considerable scientific attention over the past two decades [@Jacka2017]. Dietary patterns and specific macronutrients, including fat, carbohydrate, and protein, as well as total energy intake, may influence brain function, neurochemistry, and inflammatory pathways that are relevant to mood regulation [@Qi2024; @Sanchez2011]. Regarding fat intake specifically, higher consumption of saturated fatty acids has been linked to increased depression risk, with the Dietary Inflammatory Index (DII) found to partially mediate this association in a large NHANES-based cross-sectional study [@Qi2024]. Higher trans fat intake has also been prospectively associated with elevated depression risk in cohort studies [@Sanchez2011]. In animal models, high-fat diet consumption induced hypothalamic accumulation of palmitic acid, suppressed the cAMP/PKA signaling pathway, and produced depression-like behaviors in mice [@Vagena2019]. Beyond fat, carbohydrates influence serotonin synthesis via tryptophan availability, meaning that high glycemic-index diets may promote blood glucose fluctuations that destabilize mood. Protein provides essential amino acid precursors including tryptophan and tyrosine for neurotransmitter synthesis, so inadequate protein intake may impair the brain's capacity for mood regulation. Broader evidence from dietary intervention research further suggests that improving overall dietary quality, rather than simply altering caloric intake, is associated with meaningful reductions in depressive symptoms [@Jacka2017].
+
+## Research Questions
+
+This report addresses the following primary question: are macronutrient intakes (fat, carbohydrate, and protein) and total daily energy intake associated with depressive symptom severity among U.S. adults? More specifically, the analysis examines whether fat energy proportion differs between depressed and non-depressed individuals, whether carbohydrate and protein intakes are associated with continuous PHQ-9 depression scores, whether total energy intake is correlated with depression, and which macronutrient shows the strongest independent association after adjusting for demographic covariates.
+
+\newpage
+
+# Materials & Methods
+
+## Data Source
+
+The data used in this report come from the **National Health and Nutrition Examination Survey (NHANES) 2021-2023 cycle**, conducted by the National Center for Health Statistics (NCHS), Centers for Disease Control and Prevention (CDC) [@NHANES2021]. NHANES is a nationally representative, cross-sectional survey of the non-institutionalized civilian U.S. population, using a complex multistage probability sampling design that integrates interviews, physical examinations, and laboratory tests. The dataset is publicly available at <https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?Cycle=2021-2023>.
+
+## Variables
+
+### Outcome Variable
+
+Depressive symptom severity was measured using the Patient Health Questionnaire-9 (PHQ-9) [@Kroenke2001], derived from the NHANES mental health interview modules (variables `DPQ010` through `DPQ090`). Each of the nine items is scored 0-3, yielding a total score ranging from 0 to 27, with higher scores indicating greater symptom burden. A binary depression status variable was also created using the standard clinical cutoff: a PHQ-9 score >= 10 was classified as "Depressed," and a score < 10 as "Not Depressed" [@Kroenke2001].
+
+### Exposure Variables
+
+| Variable | NHANES Code | Description | Unit |
+|---|---|---|---|
+| Total Energy Intake | `DR1TKCAL` | Total daily caloric intake | kcal/day |
+| Total Protein Intake | `DR1TPROT` | Total daily protein intake | g/day |
+| Total Carbohydrate Intake | `DR1TCARB` | Total daily carbohydrate intake | g/day |
+| Total Fat Intake | `DR1TTFAT` | Total daily fat intake | g/day |
+| Fat Energy Proportion | Derived | Fat-derived kcal / total kcal | 0--1 |
+
+Fat energy proportion was computed as: Fat (g) x 9 kcal/g / Total kcal. Age (`RIDAGEYR`, continuous) and gender (`RIAGENDR`, categorical) were included as covariates.
+
+## Data Processing
+
+Gender was recoded as a factor variable and fat energy proportion was computed from total fat and energy intake. Participants were assigned to binary depression status groups based on the PHQ-9 cutoff. Cases with missing values in any dietary or demographic variable, implausible fat proportions (outside 0-1), or zero total energy intake were excluded. The final analytic sample comprised **`r n_total` participants**.
+
+## Statistical Methods
+
+Six analytical approaches were employed. Descriptive statistics including means, standard deviations, medians, and interquartile ranges were computed for all continuous variables, with stratification by depression status. Unpaired two-sample Welch's *t*-tests were used to compare macronutrient intakes between depressed and non-depressed participants. Pearson correlation coefficients were computed between depression score and each dietary variable and visualized as a correlation matrix. Simple linear regressions were run separately for each dietary predictor to estimate unadjusted associations with PHQ-9 score. A multiple linear regression model was then fit with all macronutrient variables, age, and gender included simultaneously. Model assumptions were assessed using the Shapiro-Wilk test on residuals, the Breusch-Pagan test for heteroscedasticity, and Variance Inflation Factors (VIF) for multicollinearity. Statistical significance was set at alpha = 0.05 (two-tailed). All analyses were conducted in R (version 4.x).
+
+\newpage
+
+# Results
+
+## Sample Characteristics
+
+```{r descriptive-table}
+desc_overall = df %>%
+  summarise(
+    N                    = n(),
+    Age_Mean_SD          = paste0(round(mean(RIDAGEYR), 1), " (", round(sd(RIDAGEYR), 1), ")"),
+    Female_pct           = paste0(sum(Gender == "Female"), " (",
+                                  round(mean(Gender == "Female") * 100, 1), "%)"),
+    Depressed_pct        = paste0(sum(Depression_Status == "Depressed"), " (",
+                                  round(mean(Depression_Status == "Depressed") * 100, 1), "%)"),
+    Dep_Score_Mean_SD    = paste0(round(mean(Depression_Score), 2),
+                                  " (", round(sd(Depression_Score), 2), ")"),
+    Dep_Score_Median_IQR = paste0(median(Depression_Score), " [",
+                                  quantile(Depression_Score, 0.25), "-",
+                                  quantile(Depression_Score, 0.75), "]"),
+    Energy_Mean_SD       = paste0(round(mean(DR1TKCAL), 1), " (", round(sd(DR1TKCAL), 1), ")"),
+    Protein_Mean_SD      = paste0(round(mean(DR1TPROT), 1), " (", round(sd(DR1TPROT), 1), ")"),
+    Carb_Mean_SD         = paste0(round(mean(DR1TCARB), 1), " (", round(sd(DR1TCARB), 1), ")"),
+    Fat_Mean_SD          = paste0(round(mean(DR1TTFAT), 1), " (", round(sd(DR1TTFAT), 1), ")"),
+    Fat_Prop_Mean_SD     = paste0(round(mean(Fat_Proportion), 3),
+                                  " (", round(sd(Fat_Proportion), 3), ")")
+  ) %>%
+  mutate(N = as.character(N)) %>%
+  pivot_longer(everything(), names_to = "Characteristic", values_to = "Value")
+
+desc_overall$Characteristic = c(
+  "N", "Age, years, Mean (SD)", "Female, N (%)",
+  "Depressed (PHQ-9 >= 10), N (%)",
+  "Depression Score, Mean (SD)", "Depression Score, Median [IQR]",
+  "Energy Intake, kcal/day, Mean (SD)", "Protein Intake, g/day, Mean (SD)",
+  "Carbohydrate Intake, g/day, Mean (SD)", "Fat Intake, g/day, Mean (SD)",
+  "Fat Energy Proportion, Mean (SD)"
+)
+
+kable(desc_overall, caption = "Sample Characteristics",
+      booktabs = TRUE, col.names = c("Characteristic", "Overall Sample")) %>%
+  kable_styling(latex_options = c("striped", "hold_position"), full_width = FALSE, position = "center")
+```
+
+The final analytic sample included `r n_total` participants with a mean age of `r round(mean(df$RIDAGEYR), 1)` years (SD = `r round(sd(df$RIDAGEYR), 1)`). The majority were female (`r round(mean(df$Gender == "Female") * 100, 1)`%), and `r round(mean(df$Depression_Status == "Depressed") * 100, 1)`% met the PHQ-9 clinical threshold for depression. The mean depression score was `r round(mean(df$Depression_Score), 2)` (SD = `r round(sd(df$Depression_Score), 2)`) with a median of `r median(df$Depression_Score)`, reflecting the right-skewed distribution typical of PHQ-9 scores in general population surveys.
+
+## Distribution of Depression Scores
+
+```{r fig-histogram, fig.cap="Distribution of PHQ-9 depression scores. Red dashed line = mean; blue solid line = median.", fig.height=3.2, fig.width=6}
+mean_score   = mean(df$Depression_Score)
+median_score = median(df$Depression_Score)
+
+ggplot(df, aes(x = Depression_Score)) +
+  geom_histogram(binwidth = 1, boundary = -0.5,
+                 fill = "steelblue", color = "white", alpha = 0.85) +
+  geom_vline(xintercept = mean_score,   color = "red",      linetype = "dashed", linewidth = 0.9) +
+  geom_vline(xintercept = median_score, color = "darkblue", linetype = "solid",  linewidth = 0.9) +
+  annotate("text", x = mean_score,   y = Inf,
+           label = paste("Mean =", round(mean_score, 1)),
+           vjust = 3, hjust = -0.15, color = "red",      fontface = "bold", size = 3) +
+  annotate("text", x = median_score, y = Inf,
+           label = paste("Median =", round(median_score, 1)),
+           vjust = 1.5, hjust = -0.15, color = "darkblue", fontface = "bold", size = 3) +
+  scale_x_continuous(breaks = seq(0, 27, 3)) +
+  labs(x = "Depression Score (0-27)", y = "Frequency") +
+  theme_minimal(base_size = 11) +
+  theme(axis.title = element_text(face = "bold"), panel.grid.minor = element_blank())
+```
+
+The PHQ-9 score distribution was strongly right-skewed, with a mean of `r round(mean_score, 2)` (SD = `r round(sd(df$Depression_Score), 2)`) and a median of `r median_score`. The large majority of participants reported low symptom burden, consistent with general population distributions of the PHQ-9. Only a small proportion of the sample (`r round(mean(df$Depression_Status == "Depressed") * 100, 1)`%) exceeded the clinical depression threshold.
+
+## Macronutrient Intake by Depression Status
+
+```{r summary-by-depression}
+summary_by_dep = df %>%
+  group_by(Depression_Status) %>%
+  summarise(
+    N              = n(),
+    Energy_Mean    = round(mean(DR1TKCAL), 1), Energy_SD    = round(sd(DR1TKCAL), 1),
+    Protein_Mean   = round(mean(DR1TPROT), 1), Protein_SD   = round(sd(DR1TPROT), 1),
+    Carb_Mean      = round(mean(DR1TCARB), 1), Carb_SD      = round(sd(DR1TCARB), 1),
+    Fat_Prop_Mean  = round(mean(Fat_Proportion), 3),
+    Fat_Prop_SD    = round(sd(Fat_Proportion), 3),
+    Dep_Score_Mean = round(mean(Depression_Score), 2),
+    Dep_Score_SD   = round(sd(Depression_Score), 2)
+  )
+
+kable(summary_by_dep,
+      caption = "Dietary Intakes by Depression Status (Mean +/- SD)",
+      booktabs = TRUE,
+      col.names = c("Status", "N", "Energy (kcal)", "SD", "Protein (g)", "SD",
+                    "Carb (g)", "SD", "Fat Prop.", "SD", "PHQ-9", "SD")) %>%
+  kable_styling(latex_options = c("striped", "hold_position", "repeat_header"), font_size = 8, full_width = FALSE, position = "center")
+```
+
+```{r ttest-table}
+dep_yes   = df %>% filter(Depression_Status == "Depressed")
+dep_no    = df %>% filter(Depression_Status == "Not Depressed")
+vars_test = list(
+  "Energy (kcal/day)"    = list(dep_yes$DR1TKCAL,       dep_no$DR1TKCAL),
+  "Protein (g/day)"      = list(dep_yes$DR1TPROT,       dep_no$DR1TPROT),
+  "Carbohydrate (g/day)" = list(dep_yes$DR1TCARB,       dep_no$DR1TCARB),
+  "Fat Proportion"       = list(dep_yes$Fat_Proportion, dep_no$Fat_Proportion)
+)
+ttest_results = lapply(names(vars_test), function(v) {
+  tt = t.test(vars_test[[v]][[1]], vars_test[[v]][[2]])
+  data.frame(
+    Variable          = v,
+    Mean_Dep          = round(mean(vars_test[[v]][[1]]), 2),
+    Mean_NonDep       = round(mean(vars_test[[v]][[2]]), 2),
+    Difference        = round(mean(vars_test[[v]][[1]]) - mean(vars_test[[v]][[2]]), 2),
+    t_stat            = round(tt$statistic, 3),
+    df                = round(tt$parameter, 1),
+    p_value           = formatC(tt$p.value, format = "e", digits = 3)
+  )
+}) %>% bind_rows()
+
+kable(ttest_results,
+      caption = "Welch's t-test: Dietary Intakes by Depression Status",
+      booktabs = TRUE, row.names = FALSE,
+      col.names = c("Variable", "Mean (Dep.)", "Mean (Non-dep.)",
+                    "Difference", "t", "df", "p-value")) %>%
+  kable_styling(latex_options = c("striped", "hold_position", "repeat_header"), font_size = 8, full_width = FALSE, position = "center")
+```
+
+Depressed participants had somewhat lower mean energy intake (1,927 vs 2,001 kcal/day) and substantially lower protein intake (68.6 vs 75.8 g/day) compared to the non-depressed group. The difference in protein intake was statistically significant (p < 0.001), while differences in energy intake, carbohydrate intake, and fat proportion were not statistically significant at the 0.05 level. Carbohydrate intake was slightly higher among depressed participants, though the difference was minimal and not significant.
+
+## Distributions by Depression Status
+
+```{r fig-boxplots, fig.cap="Distribution of dietary intakes by depression status. Diamonds indicate group means.", fig.height=5, fig.width=7.5}
+make_box = function(yvar, ylab, title_text) {
+  ggplot(df, aes(x = Depression_Status, y = .data[[yvar]], fill = Depression_Status)) +
+    geom_boxplot(width = 0.45, outlier.size = 0.5, alpha = 0.7, color = "grey30") +
+    stat_summary(fun = mean, geom = "point", shape = 18, size = 2.5, color = "black") +
+    scale_fill_manual(values = c("Not Depressed" = "#4DAFCA", "Depressed" = "#E76F51")) +
+    labs(title = title_text, x = NULL, y = ylab) +
+    theme_classic(base_size = 10) +
+    theme(plot.title = element_text(face = "bold", size = 10, hjust = 0.5),
+          legend.position = "none", axis.text.x = element_text(color = "black"))
+}
+p1 = make_box("DR1TKCAL",       "kcal/day",   "Energy Intake")
+p2 = make_box("DR1TPROT",       "g/day",      "Protein Intake")
+p3 = make_box("DR1TCARB",       "g/day",      "Carbohydrate Intake")
+p4 = make_box("Fat_Proportion",  "Proportion", "Fat Energy Proportion")
+(p1 + p2) / (p3 + p4)
+```
+
+```{r fig-mean-ci, fig.cap="Mean +/- 95% CI of dietary intakes by depression status.", fig.height=3.8, fig.width=7.5}
+make_mean_ci = function(yvar, ylab, title_text) {
+  ggplot(df, aes(x = Depression_Status, y = .data[[yvar]], color = Depression_Status)) +
+    stat_summary(fun = mean, geom = "point", size = 2.5) +
+    stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.18, linewidth = 0.7) +
+    scale_color_manual(values = c("Not Depressed" = "#4DAFCA", "Depressed" = "#E76F51")) +
+    labs(title = title_text, x = NULL, y = ylab) +
+    theme_classic(base_size = 10) +
+    theme(plot.title = element_text(face = "bold", size = 10, hjust = 0.5),
+          legend.position = "none")
+}
+q1 = make_mean_ci("DR1TKCAL",       "kcal/day",   "Energy Intake")
+q2 = make_mean_ci("DR1TPROT",       "g/day",      "Protein Intake")
+q3 = make_mean_ci("DR1TCARB",       "g/day",      "Carbohydrate Intake")
+q4 = make_mean_ci("Fat_Proportion",  "Proportion", "Fat Proportion")
+(q1 + q2 + q3 + q4)
+```
+
+The box plots and mean ± 95% CI plots show substantial overlap in all dietary variables between depressed and non-depressed participants. The most visually discernible difference is in protein intake, where depressed individuals consistently showed lower mean values. Fat energy proportion and carbohydrate intake appeared nearly identical across groups, further suggesting that these variables alone cannot meaningfully distinguish depression status.
+
+## Correlation Analysis
+
+```{r fig-correlation, fig.cap="Pearson correlation matrix between depression score and dietary variables.", fig.height=3.8, fig.width=5}
+cor_vars = df %>%
+  select(Depression_Score, DR1TKCAL, DR1TPROT, DR1TCARB, Fat_Proportion) %>%
+  rename(`PHQ-9` = Depression_Score, `Energy` = DR1TKCAL,
+         `Protein` = DR1TPROT, `Carb` = DR1TCARB, `Fat Prop.` = Fat_Proportion)
+cor_matrix = cor(cor_vars, use = "complete.obs")
+corrplot(cor_matrix,
+         method = "color", type = "upper",
+         addCoef.col = "black", number.cex = 0.72,
+         tl.col = "black", tl.srt = 45, tl.cex = 0.8,
+         col = colorRampPalette(c("#4DAFCA", "white", "#E76F51"))(200),
+         title = "Correlation Matrix", mar = c(0, 0, 1.5, 0))
+```
+
+```{r correlation-table}
+cor_list = list(
+  `Energy (kcal/day)`    = df$DR1TKCAL,
+  `Protein (g/day)`      = df$DR1TPROT,
+  `Carbohydrate (g/day)` = df$DR1TCARB,
+  `Fat Proportion`       = df$Fat_Proportion
+)
+cor_dep = lapply(names(cor_list), function(nm) {
+  ct = cor.test(cor_list[[nm]], df$Depression_Score)
+  data.frame(Variable = nm,
+             r        = round(as.numeric(ct$estimate), 4),
+             CI_lower = round(ct$conf.int[1], 4),
+             CI_upper = round(ct$conf.int[2], 4),
+             p        = formatC(ct$p.value, format = "e", digits = 3),
+             stringsAsFactors = FALSE)
+}) %>% bind_rows()
+
+kable(cor_dep,
+      caption = "Pearson Correlations between PHQ-9 Score and Dietary Variables",
+      booktabs = TRUE, row.names = FALSE,
+      col.names = c("Variable", "r", "95% CI Lower", "95% CI Upper", "p-value")) %>%
+  kable_styling(latex_options = c("striped", "hold_position"), full_width = FALSE, position = "center")
+```
+
+All Pearson correlation coefficients between dietary variables and PHQ-9 depression scores were small in magnitude (|r| < 0.07). Protein intake showed the strongest association (r = -0.06, p < 0.001), indicating a weak inverse relationship with depression score. Energy intake, carbohydrate intake, and fat proportion were not significantly correlated with depression score. The correlation matrix also revealed high inter-correlations among macronutrient variables themselves reflecting their inherent mathematical dependence as components of total caloric intake, particularly between energy intake and carbohydrate (r = 0.86) and energy intake and protein (r = 0.76).
+
+## Scatterplots
+
+```{r fig-scatterplots, fig.cap="Scatterplots of dietary intakes vs. PHQ-9 score, stratified by gender. Dashed line = overall linear trend with 95% CI.", fig.height=5.5, fig.width=7.5}
+make_scatter = function(xvar, xlab, title_text) {
+  ggplot(df, aes(x = .data[[xvar]], y = Depression_Score, color = Gender)) +
+    geom_point(alpha = 0.25, size = 0.9) +
+    geom_smooth(method = "lm", se = TRUE, color = "black", fill = "grey70",
+                linetype = "dashed", linewidth = 1, alpha = 0.2,
+                inherit.aes = FALSE, aes(x = .data[[xvar]], y = Depression_Score)) +
+    scale_color_manual(values = c("Male" = "#1B7FCC", "Female" = "#E76F51")) +
+    labs(title = title_text, x = xlab, y = "PHQ-9 Score (0-27)", color = "Gender") +
+    theme_minimal(base_size = 10) +
+    theme(plot.title = element_text(face = "bold", size = 10, hjust = 0.5),
+          axis.title = element_text(face = "bold"),
+          legend.position = "top",
+          panel.grid.minor = element_blank())
+}
+s1 = make_scatter("DR1TKCAL",       "Energy Intake (kcal/day)",    "Energy vs. Depression")
+s2 = make_scatter("DR1TPROT",       "Protein Intake (g/day)",      "Protein vs. Depression")
+s3 = make_scatter("DR1TCARB",       "Carbohydrate Intake (g/day)", "Carbohydrate vs. Depression")
+s4 = make_scatter("Fat_Proportion",  "Fat Energy Proportion",       "Fat Proportion vs. Depression")
+(s1 + s2) / (s3 + s4)
+```
+
+The scatterplots confirm the weak nature of associations between dietary intakes and depression scores. Points are broadly dispersed across the full range of PHQ-9 scores regardless of intake level. Regression lines are nearly flat for energy, carbohydrate, and fat proportion, while the protein plot shows a slight downward slope consistent with the correlation analysis. No clear gender-stratified patterns were apparent, suggesting that the relationships between macronutrients and depressive symptoms do not differ markedly by sex.
+
+## Simple Linear Regressions
+
+```{r simple-regressions}
+models_simple = list(
+  "Energy (kcal/day)"    = lm(Depression_Score ~ DR1TKCAL,       data = df),
+  "Protein (g/day)"      = lm(Depression_Score ~ DR1TPROT,       data = df),
+  "Carbohydrate (g/day)" = lm(Depression_Score ~ DR1TCARB,       data = df),
+  "Fat Proportion"       = lm(Depression_Score ~ Fat_Proportion, data = df)
+)
+simple_coef_table = lapply(names(models_simple), function(nm) {
+  m   = models_simple[[nm]]
+  s   = summary(m)
+  ci  = confint(m)
+  row = s$coefficients[2, ]
+  data.frame(Predictor = nm,
+             Beta      = round(row["Estimate"], 5),
+             SE        = round(row["Std. Error"], 5),
+             CI_Lower  = round(ci[2, 1], 5),
+             CI_Upper  = round(ci[2, 2], 5),
+             t_value   = round(row["t value"], 3),
+             p_value   = formatC(row["Pr(>|t|)"], format = "e", digits = 3),
+             R2        = round(s$r.squared, 4))
+}) %>% bind_rows()
+
+kable(simple_coef_table,
+      caption = "Simple Linear Regression: Depression Score on Each Dietary Variable",
+      booktabs = TRUE, row.names = FALSE,
+      col.names = c("Predictor", "Beta", "SE", "95% CI Lower", "95% CI Upper",
+                    "t", "p-value", "R2")) %>%
+  kable_styling(latex_options = c("striped", "hold_position", "repeat_header"), font_size = 8, full_width = FALSE, position = "center")
+```
+
+In unadjusted simple linear regressions, only protein intake was a statistically significant predictor of PHQ-9 score (Beta = -0.0071, 95% CI: -0.011 to -0.004, p < 0.001). A 1 g/day increase in protein intake was associated with a 0.007-point decrease in depression score. Energy, carbohydrate, and fat proportion were not statistically significant predictors. The R-squared values for all four models were below 0.004, confirming that individual macronutrients explain a negligible fraction of variation in depression scores.
+
+## Multiple Linear Regression (Adjusted Model)
+
+```{r multiple-regression}
+model_full = lm(
+  Depression_Score ~ Fat_Proportion + DR1TPROT + DR1TCARB + DR1TKCAL + RIDAGEYR + Gender,
+  data = df
+)
+model_sum  = summary(model_full)
+coef_full  = as.data.frame(model_sum$coefficients)
+coef_full$CI_Lower = confint(model_full)[, 1]
+coef_full$CI_Upper = confint(model_full)[, 2]
+coef_full$Term     = rownames(coef_full)
+rownames(coef_full) = NULL
+coef_full = coef_full %>%
+  mutate(Estimate  = round(Estimate, 4),
+         Std.Error = round(`Std. Error`, 4),
+         t.value   = round(`t value`, 3),
+         p.value   = formatC(`Pr(>|t|)`, format = "e", digits = 3),
+         CI_Lower  = round(CI_Lower, 4),
+         CI_Upper  = round(CI_Upper, 4)) %>%
+  select(Term, Estimate, Std.Error, CI_Lower, CI_Upper, t.value, p.value)
+coef_full$Term = c("(Intercept)", "Fat Proportion", "Protein (g/day)",
+                   "Carbohydrate (g/day)", "Energy (kcal/day)", "Age (years)", "Gender: Male")
+
+kable(coef_full,
+      caption = paste0("Multiple Linear Regression: Predictors of PHQ-9 Score (Adjusted R2 = ",
+                       round(model_sum$adj.r.squared, 4), ")"),
+      booktabs = TRUE, row.names = FALSE,
+      col.names = c("Term", "Beta", "SE", "95% CI Lower", "95% CI Upper", "t", "p-value")) %>%
+  kable_styling(latex_options = c("striped", "hold_position", "repeat_header"), font_size = 8, full_width = FALSE, position = "center")
+```
+
+After simultaneously adjusting for all macronutrients, age, and gender, protein intake (Beta = -0.010, p = 0.002) and carbohydrate intake (Beta = 0.004, p = 0.023) remained statistically significant predictors of depression score, while energy intake and fat proportion were no longer significant. Notably, age was the strongest predictor in the model (Beta = -0.049, p < 0.001), with older participants reporting lower depression scores. Being male was associated with a higher depression score compared to females (Beta = 0.928, p < 0.001) after controlling for dietary variables. The overall model explained approximately 5.1% of the variance in depression scores (adjusted R2 = `r round(model_sum$adj.r.squared, 4)`).
+
+## Model Diagnostics
+
+```{r fig-diagnostics, fig.cap="Diagnostic plots for the multiple linear regression model.", fig.height=5, fig.width=7}
+par(mfrow = c(2, 2))
+plot(model_full)
+par(mfrow = c(1, 1))
+```
+
+```{r assumption-tests, echo=FALSE}
+set.seed(42)
+resid_sample = sample(residuals(model_full), min(5000, length(residuals(model_full))))
+sw       = shapiro.test(resid_sample)
+bp       = bptest(model_full)
+vif_vals = vif(model_full)
+```
+
+The Shapiro-Wilk test indicated a significant departure from normality in the model residuals (W = `r round(sw$statistic, 4)`, p < 0.001), which is expected given the right-skewed, bounded nature of PHQ-9 scores and the large sample size. The Breusch-Pagan test confirmed the presence of heteroscedasticity (BP = `r round(bp$statistic, 4)`, p < 0.001). VIF values revealed substantial multicollinearity between energy intake (VIF = 13.9) and carbohydrate (VIF = 8.8), which is mathematically expected since total energy is a function of macronutrient intakes. These diagnostics indicate that the model assumptions are imperfectly met, and results should be interpreted primarily as descriptive associations rather than causal estimates.
+
+\newpage
+
+# Conclusions
+
+This cross-sectional analysis used data from `r n_total` U.S. adults in the NHANES 2021-2023 cycle to examine whether macronutrient intakes and total energy intake are associated with PHQ-9 depression scores. The results indicate that while several statistically significant associations were identified, effect sizes are uniformly small and the practical significance of individual macronutrients for depressive symptoms appears limited when examined in isolation.
+
+Regarding fat, depressed and non-depressed participants had nearly identical fat energy proportions and the group difference was not statistically significant. This is consistent with prior NHANES-based evidence suggesting that the association between dietary fat and depression is partly mediated by diet-induced inflammation rather than total fat quantity [@Qi2024], and that specific fat subtypes such as trans fat may be more relevant than overall fat proportion [@Sanchez2011]. Carbohydrate intake was not significantly associated with depression score in the simple linear regression model, but it showed a small statistically significant positive association after adjustment for other macronutrients, age, and gender, which aligns with prospective evidence that higher glycemic index diets increase depression risk [@Gangwisch2015] and with NHANES-based findings that a higher caloric ratio of carbohydrate intake is associated with greater depressive symptom burden [@Tan2024]. The mechanism may involve carbohydrate-related changes in insulin response and tryptophan availability, which can influence serotonin synthesis [@Wurtman1995]. Protein intake showed the most consistent inverse association with depression scores across all analyses. This is biologically plausible given that dietary protein is the primary source of tryptophan, the obligate precursor to serotonin, and prior NHANES-based work has similarly found a significant inverse association between total protein intake and depressive symptoms [@Li2020]; higher tryptophan intake from diet has also been independently linked to lower depression scores and better social cognition [@Reuter2021]. Total energy intake, by contrast, showed a near-zero correlation with depression score, consistent with evidence that the timing and macronutrient composition of eating are the more relevant dietary dimensions for depressive symptoms [@Yin2025]. In the fully adjusted model, age and gender were stronger predictors than any dietary variable, underscoring the importance of demographic context in diet-depression research. It is also worth noting that with nearly 4,500 participants, the study had very high statistical power, meaning that even trivially small effect sizes achieved significance; all Pearson correlations were below |r| = 0.07, and the fully adjusted model explained only about 5.1% of the variance in depression score.
+
+Several limitations of this study should be acknowledged. Although prior prospective cohort research has linked fat intake with later depression risk [@Sanchez2011], the cross-sectional design of the present study cannot rule out reverse causality. Dietary data were collected from a single 24-hour recall, which may not accurately capture habitual intake and is subject to well-known measurement error [@NHANES2021]. A number of important confounders including physical activity, sleep, socioeconomic status, and antidepressant use were not fully adjusted for. The PHQ-9 is a validated depression severity measure, but in this sample the score distribution was bounded and heavily right-skewed, and model diagnostics showed imperfect linear regression assumptions [@Kroenke2001]; methods such as ordinal or negative binomial regression may be more appropriate in future work. Finally, high collinearity among macronutrient variables limits the ability to isolate any single nutrient's independent contribution since protein, carbohydrate, and fat together determine total energy intake.
+
+Future work should prioritize longitudinal designs to establish temporality, as demonstrated by the SMILES dietary intervention trial [@Jacka2017] and the SUN Project cohort [@Sanchez2011]. Moving beyond individual macronutrients toward dietary pattern analyses would better capture the synergistic effects of overall diet quality on mental health [@Jacka2017], and focusing on carbohydrate quality rather than total quantity---such as distinguishing high-quality from unprocessed low-carbohydrate diets---appears particularly promising given recent evidence [@Hu2025]. These refinements would substantially strengthen the evidence base linking nutrition to mental health in the U.S. general population.
+
+\newpage
+
+# References
+
+::: {#refs}
+:::
+
+---
+
+*Analysis scripts and Shiny app source files are available at: <https://github.com/ReginaH418/R-6270>.*
