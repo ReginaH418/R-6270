@@ -13,6 +13,7 @@ library(DT)
 library(scales)
 library(bslib)
 library(shinyWidgets)
+library(plotly)
 
 # --- 1. Load & prepare data ---
 # Adjust path as needed
@@ -193,7 +194,7 @@ ui <- fluidPage(
         ),
         column(6,
           div(class = "section-header", "Depression Severity Breakdown"),
-          div(class = "plot-card", plotOutput("pie_dep", height = 300))
+          div(class = "plot-card", plotlyOutput("pie_dep", height = "380px"))
         )
       ),
 
@@ -205,20 +206,51 @@ ui <- fluidPage(
             tags$p(
               tags$b("Research Question:"),
               " Is dietary fat intake (as a proportion of total energy) associated with
-               depression symptoms in US adults, as measured by the PHQ-9?"
+     depression symptoms in US adults?"
             ),
             tags$p(
-              "This app allows you to explore NHANES data from 2021–2023.
-               Navigate the tabs above to:"
+              "This app explores data from the National Health and Nutrition Examination Survey
+   (NHANES) 2021–2023 cycle (n = 4,528 US adults aged 18–80). Depression symptoms
+   were measured using the ", tags$b("Patient Health Questionnaire-9 (PHQ-9)"),
+              ", a validated 9-item self-report scale scored 0–27, where higher scores indicate
+   greater depressive symptom severity. Scores are categorized as:
+   Minimal (0–4), Mild (5–9), Moderate (10–14), and Severe (15+)."
             ),
+            tags$p("Navigate the tabs above to:"),
             tags$ul(
               tags$li(tags$b("Data Explorer –"), " visualise relationships between diet and depression by gender, age group, or macronutrient."),
               tags$li(tags$b("Statistical Analysis –"), " run and display a linear regression of fat proportion on depression scores."),
               tags$li(tags$b("Power Simulation –"), " investigate how sample size and effect size influence statistical power.")
             ),
+            tags$hr(),
+            tags$p(
+              tags$b("Author: "), "Regina Hong, MPH '27, Cornell University Food System and Health · ",
+              tags$a(href = "mailto:yh2367@cornell.edu", "yh2367@cornell.edu")
+            ),
             tags$p(
               tags$b("Data source: "),
-              "National Health and Nutrition Examination Survey (NHANES), CDC, Cycle L."
+              tags$a(href = "https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?Cycle=2021-2023",
+                     target = "_blank", "NHANES 2021–2023, CDC")
+            ),
+            tags$p(
+              tags$b("Methods: "),
+              "Dietary fat intake was calculated as a proportion of total energy intake
+   (fat grams × 9 ÷ total kcal). Association with PHQ-9 depression score was
+   assessed using simple and age-adjusted linear regression."
+            ),
+            tags$p(
+              tags$b("GitHub Repository: "),
+              "Source code is available via the ",
+              tags$b("GitHub icon ("), icon("github", lib = "font-awesome"), tags$b(") in the top-right corner"),
+              " of this page, or directly at: ",
+              tags$a(href = "https://github.com/ReginaH418/R-6270",
+                     target = "_blank",
+                     "https://github.com/ReginaH418/R-6270")
+            ),
+            tags$p(
+              tags$b("AI Disclosure: "),
+              "ChatGPT and Claude were used to assist with code development, 
+     debugging, and app design instructions."
             )
           )
         )
@@ -503,22 +535,32 @@ server <- function(input, output, session) {
            x = "Depression Score (0-27)", y = "Count") +
       theme_app
   })
-
-  output$pie_dep <- renderPlot({
+  
+  output$pie_dep <- renderPlotly({
     counts <- nhdf %>%
       count(Depression_Cat) %>%
-      mutate(pct = n / sum(n),
-             label = paste0(Depression_Cat, "\n", round(pct * 100, 1), "%"))
-    ggplot(counts, aes(x = "", y = pct, fill = Depression_Cat)) +
-      geom_col(color = "white", linewidth = 0.5) +
-      coord_polar("y") +
-      geom_text(aes(label = label),
-                position = position_stack(vjust = 0.5), size = 3.5) +
-      scale_fill_manual(values = col_dep) +
-      labs(title = "Depression Severity Categories (PHQ-9)", fill = NULL) +
-      theme_void() +
-      theme(plot.title   = element_text(face = "bold", size = 14, hjust = 0.5),
-            legend.position = "none")
+      mutate(pct = n / sum(n))
+    
+    plot_ly(
+      counts,
+      labels  = ~Depression_Cat,
+      values  = ~pct,
+      type    = "pie",
+      textposition = "outside",
+      textinfo     = "label+percent",
+      marker = list(
+        colors = c("#2a9d8f", "#e9c46a", "#f4a261", "#e63946"),
+        line   = list(color = "white", width = 2)
+      ),
+      showlegend = FALSE
+    ) %>%
+      layout(
+        title = list(
+          text = "Depression Severity Categories (PHQ-9)",
+          font = list(size = 14)
+        ),
+        margin = list(l = 60, r = 60, t = 60, b = 60)
+      )
   })
 
   # ---- TAB 2: Explorer plot ----

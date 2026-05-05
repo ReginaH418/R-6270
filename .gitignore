@@ -50,3 +50,4 @@ rsconnect/
 
 # mac
 .DS_Store
+.positai
